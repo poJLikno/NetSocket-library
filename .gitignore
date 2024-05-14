@@ -1,0 +1,9 @@
+.DS_Store
+/.vs/
+x64/
+/NetSocket.sln
+/NetSocket/NetSocket.vcxproj
+/NetSocket/NetSocket.vcxproj.filters
+/NetSocket/NetSocket.vcxproj.user
+/NetSocket/NetSocket.xcodeproj
+/NetSocket/NetSocket.xcodeproj/
