@@ -1,61 +1,39 @@
 #include <iostream>
-#include <stdlib.h>
-#include <chrono>
-#include <thread>
+#include <pthread.h>
 
 #include "NetSocket/NetSocket.h"
 
-#define SERVER_PI "127.0.0.1"
-#define SERVER_PORT 8080
+static void *client_thread_func(void *) {
+	NetSocketClient client("127.0.0.1", 8080u);
+	char buffer[1024] = { 0 };
 
-void func() {
-	std::this_thread::sleep_for(std::chrono::seconds(2));
-	
-	try {
-		NetSocket client;
-		char client_buffer[64] = "Client message";
-
-		client.ConnectTo(SERVER_PI, SERVER_PORT);
-		client.Send(client_buffer, sizeof(client_buffer));
-		memset(client_buffer, 0, sizeof(client_buffer));
-		if (client.Recieve(client_buffer, sizeof(client_buffer))) {
-			std::cout << client_buffer << "\n";
-		}
+	Sleep(1000);
+	client.Send((char *)"Client request!", 16ull);
+	if (client.Recieve(buffer, sizeof(buffer)) > 0) {
+		std::cout << "Client: " << buffer << "\n";
 		client.ShutdownConnection();
 	}
-	catch (std::string &error) {
-		std::cout << error << "\n";
-	}
+
+	pthread_exit(nullptr);
+	return nullptr;
 }
 
 int main(int argc, const char **argv) {
-#ifdef _WIN32
-	SetConsoleCP(CP_UTF8);
-	SetConsoleOutputCP(CP_UTF8);
-#endif
+	NetSocketServer server(8080u);
+	char buffer[1024] = { 0 };
+	pthread_t client_thread = { 0 };
 
-	try {
-		NetSocket server;
-		char server_buffer[64] = { 0 };
 
-		server.ListenPort(8080);
+	pthread_create(&client_thread, nullptr, client_thread_func, nullptr);
 
-		std::thread thrd(func);
-		thrd.detach();
-		
-		if (server.AcceptConnection()) {
-			while (server.Recieve(server_buffer, sizeof(server_buffer))) {
-				std::cout << server_buffer << "\n";
-				server.Send((char *)"Server message", 14ull);
-
-				memset(server_buffer, 0, sizeof(server_buffer));
-			}
-			server.ShutdownConnection();
-		}
+	server.AcceptConnection();
+	if (server.Recieve(buffer, sizeof(buffer)) > 0) {
+		std::cout << "Server: " << buffer << "\n";
+		server.Send((char *)"Server answer!", 15ull);
+		server.ShutdownConnection();
 	}
-	catch (std::string &error) {
-		std::cout << error << "\n";
-	}
+
+	pthread_join(client_thread, nullptr);
 
 	return 0;
 }
