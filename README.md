@@ -4,4 +4,4 @@
 
 ## Check list
 - [X] Windows support
-- [ ] Unix OS support
+- [X] Unix OS support
